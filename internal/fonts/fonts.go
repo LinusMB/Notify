@@ -1,6 +1,7 @@
 package fonts
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -38,6 +39,21 @@ func LoadTTF(path string, size float64) (font.Face, error) {
 			"could not open font file at path %s: %w",
 			path,
 			err,
+		)
+	}
+	contentType, err := GetFileContentType(file)
+	if err != nil {
+		return face, errors.New(
+			fmt.Sprintf(
+				"could not read content type of file %s: %w",
+				path,
+				err,
+			),
+		)
+	}
+	if !strings.HasSuffix(contentType, "ttf") {
+		return face, errors.New(
+			fmt.Sprintf("file %s is not of type ttf", path),
 		)
 	}
 	defer file.Close()
