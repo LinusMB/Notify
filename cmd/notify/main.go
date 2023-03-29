@@ -128,6 +128,8 @@ If width = 0 or height = 0, window dimensions are set to fit the text`)
 // TODO: screen number
 // TODO: image support
 // TODO: display ... for text that is cut off
+// TODO: accept input [title] body
+// TODO: accept neg win position
 
 func setupWindow(
 	bounds pixel.Rect,
@@ -156,20 +158,21 @@ func max[T constraints.Ordered](x, y T) T {
 }
 
 func drawRectangle(
-	vs [4]pixel.Vec,
-	thickness float64,
+	r pixel.Rect,
 	clr color.Color,
 	imd *imdraw.IMDraw,
 ) {
 	imd.Color = clr
+	vs := r.Vertices()
 	imd.Push(vs[0], vs[1], vs[2], vs[3])
-	imd.Polygon(thickness)
+	imd.Polygon(0)
 }
 
 func run() {
 	const (
 		minWinHeight = 40
 		padding      = 10
+		borderWidth  = 4
 	)
 	var displayText *text.Text
 	{
@@ -186,45 +189,49 @@ func run() {
 
 	imd := imdraw.New(nil)
 
-	var win *pixelgl.Window
+	var textBox, paddingBox, borderBox pixel.Rect
 	{
-		var (
-			err       error
-			winBounds pixel.Rect
+		textBox = displayText.BoundsOf(text)
+		textBox = textBox.Resized(
+			textBox.Center(),
+			pixel.V(textBox.W(), max(textBox.H(), minWinHeight)),
 		)
-		position := pixel.V(config.winX, config.winY)
-		textBounds := displayText.BoundsOf(text)
+
 		if config.autoDimension {
-			winBounds = textBounds.Resized(
-				textBounds.Center(),
-				pixel.V(
-					textBounds.W()+2*padding,
-					max(textBounds.H(), minWinHeight)+2*padding,
-				),
+			paddingBox = textBox.Resized(
+				textBox.Center(),
+				pixel.V(textBox.W()+2*padding, textBox.H()+2*padding),
 			)
 		} else {
-			winBounds = textBounds.Resized(
-				textBounds.Center(),
-				pixel.V(config.winWidth, config.winHeight),
+			paddingBox = textBox.Resized(
+				textBox.Center(),
+				pixel.V(config.winWidth-2*borderWidth, config.winHeight-2*borderWidth),
 			)
 		}
-		drawRectangle(winBounds.Vertices(), 3, colornames.Blue, imd)
-		win, err = setupWindow(winBounds, position)
-		failIf(err, "create window")
+		borderBox = paddingBox.Resized(
+			paddingBox.Center(),
+			pixel.V(paddingBox.W()+2*borderWidth, paddingBox.H()+2*borderWidth),
+		)
 	}
+
+	borderColor := colornames.White
+
+	drawRectangle(borderBox, borderColor, imd)
+
+	drawRectangle(paddingBox, config.bgColor, imd)
+
+	win, err := setupWindow(borderBox, pixel.V(config.winX, config.winY))
+	failIf(err, "create window")
 
 	fmt.Fprint(displayText, text)
 
 	for !win.Closed() {
-		win.Clear(
-			config.bgColor,
-		) // set background
+		imd.Draw(win)
 		displayText.DrawColorMask(
 			win,
 			pixel.IM,
 			config.fgColor,
-		) // set foreground
-		imd.Draw(win)
+		)
 		win.Update()
 	}
 	// time.Sleep(config.duration)
