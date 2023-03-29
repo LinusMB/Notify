@@ -2,8 +2,14 @@ PREFIX ?= $(HOME)/.local
 
 BIN = notify
 
-$(BIN): $(wildcard cmd/notify/*go)
+SRCS = $(shell find cmd/ internal/ -type f -name '*go')
+
+$(BIN): $(SRCS)
 	go build ./cmd/notify
+
+.PHONY: test
+test:
+	go test -v ./...
 
 .PHONY: build
 build: $(BIN)
