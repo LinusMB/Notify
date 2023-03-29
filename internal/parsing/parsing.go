@@ -7,6 +7,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func failIf(err error, msg string) {
@@ -119,9 +120,11 @@ func ParseNotification(input string) *Notification {
 	)
 	ms := re.FindSubmatch([]byte(input))
 
+	title := strings.TrimSpace(string(ms[TITLE]))
+	body := strings.TrimSpace(string(ms[BODY]))
 	n := Notification{
-		Title: string(ms[TITLE]),
-		Body:  string(ms[BODY]),
+		Title: title,
+		Body:  body,
 	}
 
 	return &n

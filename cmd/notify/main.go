@@ -21,17 +21,18 @@ import (
 )
 
 type Configuration struct {
-	fontFace      font.Face
-	fontSize      float64
-	winWidth      float64
-	winHeight     float64
-	winX          float64
-	winY          float64
-	autoDimension bool
-	bgColor       color.Color
-	fgColor       color.Color
-	outputString  string
-	duration      time.Duration
+	fontFaceRegular font.Face
+	fontFaceBold    font.Face
+	fontSize        float64
+	winWidth        float64
+	winHeight       float64
+	winX            float64
+	winY            float64
+	autoDimension   bool
+	bgColor         color.Color
+	fgColor         color.Color
+	outputString    string
+	duration        time.Duration
 }
 
 var (
@@ -104,19 +105,22 @@ If width = 0 or height = 0, window dimensions are set to fit the text`)
 	}
 
 	{
-		face, err := fonts.LoadTTFontFromPattern(*fontName, *fontSize)
+		// face, err := fonts.LoadTTFontFromPattern(*fontName, *fontSize)
+		_ = fontName
+		fs, err := fonts.LoadTTFontSet("Inconsolata", *fontSize)
 		failIf(err, "load font")
-		config.fontFace = face
+		config.fontFaceRegular = fs.Regular
+		config.fontFaceBold = fs.Bold
 	}
 	{
-		clr, err := parsing.ParseColor(*backgroundColor)
+		c, err := parsing.ParseColor(*backgroundColor)
 		failIf(err, "parse background color")
-		config.bgColor = clr
+		config.bgColor = c
 	}
 	{
-		clr, err := parsing.ParseColor(*foregroundColor)
+		c, err := parsing.ParseColor(*foregroundColor)
 		failIf(err, "parse foreground color")
-		config.fgColor = clr
+		config.fgColor = c
 	}
 
 	config.fontSize = *fontSize
@@ -128,7 +132,6 @@ If width = 0 or height = 0, window dimensions are set to fit the text`)
 // TODO: screen number
 // TODO: image support
 // TODO: display ... for text that is cut off
-// TODO: accept input [title] body
 // TODO: accept neg win position
 
 func setupWindow(
@@ -159,13 +162,46 @@ func max[T constraints.Ordered](x, y T) T {
 
 func drawRectangle(
 	r pixel.Rect,
-	clr color.Color,
+	c color.Color,
 	imd *imdraw.IMDraw,
 ) {
-	imd.Color = clr
+	imd.Color = c
 	vs := r.Vertices()
 	imd.Push(vs[0], vs[1], vs[2], vs[3])
 	imd.Polygon(0)
+}
+
+type textContent struct {
+	title *text.Text
+	body  *text.Text
+}
+
+func newTextContent(c color.Color, regular, bold *text.Atlas) *textContent {
+	tc := textContent{
+		title: text.New(pixel.ZV, bold),
+		body:  text.New(pixel.ZV, regular),
+	}
+	tc.title.Color = c
+	tc.body.Color = c
+	return &tc
+}
+
+func (tc *textContent) writeTitle(title string) {
+	fmt.Fprintln(tc.title, title)
+}
+
+func (tc *textContent) writeBody(body string) {
+	tc.body.Dot = tc.title.Dot
+	fmt.Fprint(tc.body, body)
+}
+
+func (tc *textContent) bounds() pixel.Rect {
+	return tc.title.Bounds().Union(tc.body.Bounds())
+}
+
+func (tc *textContent) draw(t pixel.Target) {
+	tc.title.Draw(t, pixel.IM)
+	tc.body.Draw(t, pixel.IM)
 }
 
 func run() {
@@ -174,24 +210,31 @@ func run() {
 		padding      = 10
 		borderWidth  = 4
 	)
-	var displayText *text.Text
-	{
-		atlas := text.NewAtlas(config.fontFace, text.ASCII)
-		displayText = text.New(pixel.ZV, atlas)
-	}
 
-	var text string
+	textContent := newTextContent(
+		config.fgColor,
+		text.NewAtlas(config.fontFaceRegular, text.ASCII),
+		text.NewAtlas(config.fontFaceBold, text.ASCII),
+	)
+
+	var notification *parsing.Notification
 	{
 		bytes, err := io.ReadAll(os.Stdin)
 		failIf(err, "read from stdin")
-		text = string(bytes)
+		input := string(bytes)
+		notification = parsing.ParseNotification(input)
 	}
+
+	if notification.Title != "" {
+		textContent.writeTitle(notification.Title)
+	}
+	textContent.writeBody(notification.Body)
 
 	imd := imdraw.New(nil)
 
 	var textBox, paddingBox, borderBox pixel.Rect
 	{
-		textBox = displayText.BoundsOf(text)
+		textBox = textContent.bounds()
 		textBox = textBox.Resized(
 			textBox.Center(),
 			pixel.V(textBox.W(), max(textBox.H(), minWinHeight)),
@@ -223,15 +266,9 @@ func run() {
 	win, err := setupWindow(borderBox, pixel.V(config.winX, config.winY))
 	failIf(err, "create window")
 
-	fmt.Fprint(displayText, text)
-
 	for !win.Closed() {
 		imd.Draw(win)
-		displayText.DrawColorMask(
-			win,
-			pixel.IM,
-			config.fgColor,
-		)
+		textContent.draw(win)
 		win.Update()
 	}
 	// time.Sleep(config.duration)
