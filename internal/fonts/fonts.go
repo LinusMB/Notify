@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
@@ -74,4 +75,34 @@ func LoadTTFontFromPattern(pattern string, size float64) (font.Face, error) {
 		return nil, err
 	}
 	return LoadTTF(fontPath, size)
+}
+
+func LoadTTFontFromFamily(
+	family string,
+	style string,
+	size float64,
+) (font.Face, error) {
+	pattern := fmt.Sprintf("%s:style=%s", family, style)
+	return LoadTTFontFromPattern(pattern, size)
+}
+
+type FontSet struct {
+	Regular font.Face
+	Bold    font.Face
+}
+
+func LoadTTFontSet(family string, size float64) (*FontSet, error) {
+	regular, err := LoadTTFontFromFamily(family, "Regular", size)
+	if err != nil {
+		return nil, err
+	}
+	bold, err := LoadTTFontFromFamily(family, "Bold", size)
+	if err != nil {
+		return nil, err
+	}
+	fs := FontSet{
+		Regular: regular,
+		Bold:    bold,
+	}
+	return &fs, nil
 }
