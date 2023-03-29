@@ -48,7 +48,10 @@ func failIf(err error, msg string) {
 func init() {
 	help := func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "\nDisplays text read from stdin in a pop-up notification window\n")
+		fmt.Fprintf(
+			os.Stderr,
+			"\nDisplays text read from stdin in a pop-up notification window\n",
+		)
 		fmt.Fprintf(os.Stderr, "\nOptions:\n")
 		flag.PrintDefaults()
 	}
@@ -126,7 +129,10 @@ If width = 0 or height = 0, window dimensions are set to fit the text`)
 // TODO: image support
 // TODO: display ... for text that is cut off
 
-func setupWindow(bounds pixel.Rect, position pixel.Vec) (*pixelgl.Window, error) {
+func setupWindow(
+	bounds pixel.Rect,
+	position pixel.Vec,
+) (*pixelgl.Window, error) {
 	cfg := pixelgl.WindowConfig{
 		Title:       appName,
 		Bounds:      bounds,
@@ -149,7 +155,12 @@ func max[T constraints.Ordered](x, y T) T {
 	return y
 }
 
-func drawRectangle(vs [4]pixel.Vec, thickness float64, clr color.Color, imd *imdraw.IMDraw) {
+func drawRectangle(
+	vs [4]pixel.Vec,
+	thickness float64,
+	clr color.Color,
+	imd *imdraw.IMDraw,
+) {
 	imd.Color = clr
 	imd.Push(vs[0], vs[1], vs[2], vs[3])
 	imd.Polygon(thickness)
@@ -184,9 +195,18 @@ func run() {
 		position := pixel.V(config.winX, config.winY)
 		textBounds := displayText.BoundsOf(text)
 		if config.autoDimension {
-			winBounds = textBounds.Resized(textBounds.Center(), pixel.V(textBounds.W()+2*padding, max(textBounds.H(), minWinHeight)+2*padding))
+			winBounds = textBounds.Resized(
+				textBounds.Center(),
+				pixel.V(
+					textBounds.W()+2*padding,
+					max(textBounds.H(), minWinHeight)+2*padding,
+				),
+			)
 		} else {
-			winBounds = textBounds.Resized(textBounds.Center(), pixel.V(config.winWidth, config.winHeight))
+			winBounds = textBounds.Resized(
+				textBounds.Center(),
+				pixel.V(config.winWidth, config.winHeight),
+			)
 		}
 		drawRectangle(winBounds.Vertices(), 3, colornames.Blue, imd)
 		win, err = setupWindow(winBounds, position)
@@ -196,8 +216,14 @@ func run() {
 	fmt.Fprint(displayText, text)
 
 	for !win.Closed() {
-		win.Clear(config.bgColor)                                // set background
-		displayText.DrawColorMask(win, pixel.IM, config.fgColor) // set foreground
+		win.Clear(
+			config.bgColor,
+		) // set background
+		displayText.DrawColorMask(
+			win,
+			pixel.IM,
+			config.fgColor,
+		) // set foreground
 		imd.Draw(win)
 		win.Update()
 	}

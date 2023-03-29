@@ -32,7 +32,14 @@ func ParseColor(hex string) (color.RGBA, error) {
 		_, err = fmt.Sscanf(hex, "#%02x%02x%02x", &clr.R, &clr.G, &clr.B)
 		clr.A = 0xff
 	case 9:
-		_, err = fmt.Sscanf(hex, "#%02x%02x%02x%02x", &clr.R, &clr.G, &clr.B, &clr.A)
+		_, err = fmt.Sscanf(
+			hex,
+			"#%02x%02x%02x%02x",
+			&clr.R,
+			&clr.G,
+			&clr.B,
+			&clr.A,
+		)
 	default:
 		err = errors.New("unexpected format")
 	}
@@ -65,19 +72,35 @@ func ParseDimension(dimension string) (*Dimension, error) {
 	)
 	dim.Width, err = strconv.ParseFloat(ts[WIDTH], 64)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse width as float in %s: %w", dimension, err)
+		return nil, fmt.Errorf(
+			"could not parse width as float in %s: %w",
+			dimension,
+			err,
+		)
 	}
 	dim.Height, err = strconv.ParseFloat(ts[HEIGHT], 64)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse height as float in %s: %w", dimension, err)
+		return nil, fmt.Errorf(
+			"could not parse height as float in %s: %w",
+			dimension,
+			err,
+		)
 	}
 	dim.X, err = strconv.ParseFloat(ts[X], 64)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse x as float in %s: %w", dimension, err)
+		return nil, fmt.Errorf(
+			"could not parse x as float in %s: %w",
+			dimension,
+			err,
+		)
 	}
 	dim.Y, err = strconv.ParseFloat(ts[Y], 64)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse y as float in %s: %w", dimension, err)
+		return nil, fmt.Errorf(
+			"could not parse y as float in %s: %w",
+			dimension,
+			err,
+		)
 	}
 	return &dim, err
 }

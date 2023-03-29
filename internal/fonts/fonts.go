@@ -11,9 +11,16 @@ import (
 )
 
 func GetFontPathWithFCMatch(pattern string) (string, error) {
-	fontPath, err := exec.Command("fc-match", "--format=%{file}", pattern).Output()
+	fontPath, err := exec.Command("fc-match", "--format=%{file}", pattern).
+		Output()
 	if err != nil {
-		return string(fontPath), fmt.Errorf("could not find font path for pattern %s: %w", pattern, err)
+		return string(
+				fontPath,
+			), fmt.Errorf(
+				"could not find font path for pattern %s: %w",
+				pattern,
+				err,
+			)
 	}
 	return string(fontPath), nil
 }
@@ -26,20 +33,32 @@ func LoadTTF(path string, size float64) (font.Face, error) {
 	)
 	file, err = os.Open(path)
 	if err != nil {
-		return face, fmt.Errorf("could not open font file at path %s: %w", path, err)
+		return face, fmt.Errorf(
+			"could not open font file at path %s: %w",
+			path,
+			err,
+		)
 	}
 	defer file.Close()
 
 	var bytes []byte
 	bytes, err = io.ReadAll(file)
 	if err != nil {
-		return face, fmt.Errorf("could not read contents of file %s: %w", path, err)
+		return face, fmt.Errorf(
+			"could not read contents of file %s: %w",
+			path,
+			err,
+		)
 	}
 
 	var font *truetype.Font
 	font, err = truetype.Parse(bytes)
 	if err != nil {
-		return face, fmt.Errorf("could not parse contents of file %s: %w", path, err)
+		return face, fmt.Errorf(
+			"could not parse contents of file %s: %w",
+			path,
+			err,
+		)
 	}
 
 	face = truetype.NewFace(font, &truetype.Options{
