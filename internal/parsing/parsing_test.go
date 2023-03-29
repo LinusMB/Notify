@@ -53,3 +53,25 @@ func TestParseColor_InvalidInput(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDimension(t *testing.T) {
+	tests := []struct {
+		dimension string
+		want      Dimension
+	}{
+		{"40x40+40+40", Dimension{Width: 40, Height: 40, X: 40, Y: 40}},
+		{"0x0+0+0", Dimension{Width: 0, Height: 0, X: 0, Y: 0}},
+	}
+	for _, tt := range tests {
+		testname := tt.dimension
+		t.Run(testname, func(t *testing.T) {
+			got, err := ParseDimension(tt.dimension)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if *got != tt.want {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
