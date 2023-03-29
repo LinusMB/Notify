@@ -104,3 +104,25 @@ func ParseDimension(dimension string) (*Dimension, error) {
 	}
 	return &dim, err
 }
+
+type Notification struct {
+	Title string
+	Body  string
+}
+
+func ParseNotification(input string) *Notification {
+	re, err := regexp.Compile(`(?:\[(.*)\])?(.*)`)
+	failIf(err, "compile regex")
+	const (
+		TITLE = iota + 1
+		BODY
+	)
+	ms := re.FindSubmatch([]byte(input))
+
+	n := Notification{
+		Title: string(ms[TITLE]),
+		Body:  string(ms[BODY]),
+	}
+
+	return &n
+}
