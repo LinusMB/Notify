@@ -3,10 +3,9 @@ module Notify
 go 1.19
 
 require (
-	github.com/faiface/beep v1.1.0
 	github.com/faiface/pixel v0.10.0
-	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
-	golang.org/x/image v0.0.0-20190523035834-f03afa92d3ff
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+	golang.org/x/image v0.6.0
 )
 
 require (
@@ -16,5 +15,5 @@ require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72 // indirect
 	github.com/go-gl/mathgl v0.0.0-20190416160123-c4601bc793c7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
+	golang.org/x/text v0.8.0 // indirect
 )
