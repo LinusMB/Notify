@@ -61,12 +61,14 @@ func init() {
 	dimension := flag.String(
 		"g",
 		"0x0+20+20",
-		`window dimensions as "<width>x<height>+<x>+<y>". 
+		`window dimensions as "<width>x<height>+<x>+<y>".
 If width = 0 or height = 0, window dimensions are set to fit the text`)
-	fontName := flag.String(
+	fontFamily := flag.String(
 		"f",
 		"Inconsolata",
-		"font pattern as passed to fc-match")
+		`font family. The font path for this font family is searched using fc-match. 
+Make sure that fontconfig is installed`,
+	)
 	fontSize := flag.Float64(
 		"s",
 		30,
@@ -105,9 +107,9 @@ If width = 0 or height = 0, window dimensions are set to fit the text`)
 	}
 
 	{
-		// face, err := fonts.LoadTTFontFromPattern(*fontName, *fontSize)
-		_ = fontName
-		fs, err := fonts.LoadTTFontSet("Inconsolata", *fontSize)
+		// fs, err := fonts.LoadTTFontSet(*fontFamily, *fontSize)
+		_ = fontFamily
+		fs, err := fonts.LoadTTFontSetDefault(*fontSize)
 		failIf(err, "load font")
 		config.fontFaceRegular = fs.Regular
 		config.fontFaceBold = fs.Bold

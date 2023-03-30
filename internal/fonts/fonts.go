@@ -1,6 +1,7 @@
 package fonts
 
 import (
+	_ "embed"
 	"errors"
 	"fmt"
 	"io"
@@ -12,7 +13,7 @@ import (
 	"golang.org/x/image/font"
 )
 
-func GetFontPathWithFCMatch(pattern string) (string, error) {
+func getFontPathWithFCMatch(pattern string) (string, error) {
 	fontPath, err := exec.Command("fc-match", "--format=%{file}", pattern).
 		Output()
 	if err != nil {
@@ -27,7 +28,20 @@ func GetFontPathWithFCMatch(pattern string) (string, error) {
 	return string(fontPath), nil
 }
 
-func LoadTTF(path string, size float64) (font.Face, error) {
+func loadTTFontFromBytes(bytes []byte, size float64) (font.Face, error) {
+	font, err := truetype.Parse(bytes)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse contents of bytearray: %w", err)
+	}
+
+	face := truetype.NewFace(font, &truetype.Options{
+		Size:              size,
+		GlyphCacheEntries: 1,
+	})
+	return face, nil
+}
+
+func LoadTTFontFromPath(path string, size float64) (font.Face, error) {
 	var (
 		file *os.File
 		face font.Face
@@ -35,15 +49,17 @@ func LoadTTF(path string, size float64) (font.Face, error) {
 	)
 	file, err = os.Open(path)
 	if err != nil {
-		return face, fmt.Errorf(
+		return nil, fmt.Errorf(
 			"could not open font file at path %s: %w",
 			path,
 			err,
 		)
 	}
+	defer file.Close()
+
 	contentType, err := GetFileContentType(file)
 	if err != nil {
-		return face, errors.New(
+		return nil, errors.New(
 			fmt.Sprintf(
 				"could not read content type of file %s: %w",
 				path,
@@ -52,24 +68,21 @@ func LoadTTF(path string, size float64) (font.Face, error) {
 		)
 	}
 	if !strings.HasSuffix(contentType, "ttf") {
-		return face, errors.New(
+		return nil, errors.New(
 			fmt.Sprintf("file %s is not of type ttf", path),
 		)
 	}
-	defer file.Close()
 
 	var bytes []byte
 	bytes, err = io.ReadAll(file)
 	if err != nil {
-		return face, fmt.Errorf(
+		return nil, fmt.Errorf(
 			"could not read contents of file %s: %w",
 			path,
 			err,
 		)
 	}
-
-	var font *truetype.Font
-	font, err = truetype.Parse(bytes)
+	face, err = loadTTFontFromBytes(bytes, size)
 	if err != nil {
 		return face, fmt.Errorf(
 			"could not parse contents of file %s: %w",
@@ -77,20 +90,15 @@ func LoadTTF(path string, size float64) (font.Face, error) {
 			err,
 		)
 	}
-
-	face = truetype.NewFace(font, &truetype.Options{
-		Size:              size,
-		GlyphCacheEntries: 1,
-	})
 	return face, nil
 }
 
 func LoadTTFontFromPattern(pattern string, size float64) (font.Face, error) {
-	fontPath, err := GetFontPathWithFCMatch(pattern)
+	fontPath, err := getFontPathWithFCMatch(pattern)
 	if err != nil {
 		return nil, err
 	}
-	return LoadTTF(fontPath, size)
+	return LoadTTFontFromPath(fontPath, size)
 }
 
 func LoadTTFontFromFamily(
@@ -113,6 +121,28 @@ func LoadTTFontSet(family string, size float64) (*FontSet, error) {
 		return nil, err
 	}
 	bold, err := LoadTTFontFromFamily(family, "Bold", size)
+	if err != nil {
+		return nil, err
+	}
+	fs := FontSet{
+		Regular: regular,
+		Bold:    bold,
+	}
+	return &fs, nil
+}
+
+//go:embed static/Inconsolata-Regular.ttf
+var inconsolataRegular []byte
+
+//go:embed static/Inconsolata-Bold.ttf
+var inconsolataBold []byte
+
+func LoadTTFontSetDefault(size float64) (*FontSet, error) {
+	regular, err := loadTTFontFromBytes(inconsolataRegular, size)
+	if err != nil {
+		return nil, err
+	}
+	bold, err := loadTTFontFromBytes(inconsolataBold, size)
 	if err != nil {
 		return nil, err
 	}
