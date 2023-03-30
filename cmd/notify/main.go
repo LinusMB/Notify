@@ -159,12 +159,6 @@ Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/
 	config.outputString = *outputString
 }
 
-// TODO: register mouse clicks
-// TODO: screen number
-// TODO: image support
-// TODO: display ... for text that is cut off
-// TODO: accept neg win position
-
 func setupWindow(
 	bounds pixel.Rect,
 	position pixel.Vec,
@@ -305,6 +299,12 @@ func run() {
 	// time.Sleep(config.duration)
 	// fmt.Fprint(os.Stdout, config.outputString)
 }
+
+// TODO: register mouse clicks
+// TODO: screen number (Multihead support)
+// TODO: accept neg win position
+// TODO: infinite notification window duration
+// TODO: add flag to chose border color / border width
 
 func main() {
 	pixelgl.Run(run)
