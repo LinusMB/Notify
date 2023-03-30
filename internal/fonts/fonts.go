@@ -13,6 +13,12 @@ import (
 	"golang.org/x/image/font"
 )
 
+//go:embed static/Inconsolata-Regular.ttf
+var inconsolataRegular []byte
+
+//go:embed static/Inconsolata-Bold.ttf
+var inconsolataBold []byte
+
 func getFontPathWithFCMatch(pattern string) (string, error) {
 	fontPath, err := exec.Command("fc-match", "--format=%{file}", pattern).
 		Output()
@@ -115,7 +121,15 @@ type FontSet struct {
 	Bold    font.Face
 }
 
-func LoadTTFontSet(family string, size float64) (*FontSet, error) {
+func newFontSet(regular font.Face, bold font.Face) *FontSet {
+	fs := FontSet{
+		Regular: regular,
+		Bold:    bold,
+	}
+	return &fs
+}
+
+func LoadTTFontSetFromFamily(family string, size float64) (*FontSet, error) {
 	regular, err := LoadTTFontFromFamily(family, "Regular", size)
 	if err != nil {
 		return nil, err
@@ -124,18 +138,23 @@ func LoadTTFontSet(family string, size float64) (*FontSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	fs := FontSet{
-		Regular: regular,
-		Bold:    bold,
-	}
-	return &fs, nil
+	return newFontSet(regular, bold), nil
 }
 
-//go:embed static/Inconsolata-Regular.ttf
-var inconsolataRegular []byte
-
-//go:embed static/Inconsolata-Bold.ttf
-var inconsolataBold []byte
+func LoadTTFontSetFromPaths(
+	regularFontPath, boldFontPath string,
+	size float64,
+) (*FontSet, error) {
+	regular, err := LoadTTFontFromPath(regularFontPath, size)
+	if err != nil {
+		return nil, err
+	}
+	bold, err := LoadTTFontFromPath(boldFontPath, size)
+	if err != nil {
+		return nil, err
+	}
+	return newFontSet(regular, bold), nil
+}
 
 func LoadTTFontSetDefault(size float64) (*FontSet, error) {
 	regular, err := loadTTFontFromBytes(inconsolataRegular, size)
@@ -146,9 +165,5 @@ func LoadTTFontSetDefault(size float64) (*FontSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	fs := FontSet{
-		Regular: regular,
-		Bold:    bold,
-	}
-	return &fs, nil
+	return newFontSet(regular, bold), nil
 }

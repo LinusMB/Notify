@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -65,9 +66,20 @@ func init() {
 If width = 0 or height = 0, window dimensions are set to fit the text`)
 	fontFamily := flag.String(
 		"f",
-		"Inconsolata",
-		`font family. The font path for this font family is searched using fc-match. 
-Make sure that fontconfig is installed`,
+		"",
+		`font family. The font path to regular and bold font of type font family is searched using fc-match (make sure that fontconfig is installed).
+If -f and -fp are unspecified the default font (Inconsolata) is used.
+If both -f and -fp are specified, -fp is preferred.
+Example: -f "Inconsolata"`,
+	)
+	fontPaths := flag.String(
+		"fp",
+		"",
+		`font path to regular and bold font as "<regular-font-path>,<bold-font-path>.
+The font is loaded from the font file at <*-font-path>.
+If -f and -fp are unspecified the default font (Inconsolata) is used.
+If both -f and -fp are specified, -fp is preferred.
+Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/Inconsolata-Bold.ttf"`,
 	)
 	fontSize := flag.Float64(
 		"s",
@@ -107,9 +119,26 @@ Make sure that fontconfig is installed`,
 	}
 
 	{
-		// fs, err := fonts.LoadTTFontSet(*fontFamily, *fontSize)
-		_ = fontFamily
-		fs, err := fonts.LoadTTFontSetDefault(*fontSize)
+		var (
+			fs  *fonts.FontSet
+			err error
+		)
+		if *fontPaths != "" {
+			const (
+				REGULAR = iota
+				BOLD    = iota
+			)
+			ts := strings.SplitN(*fontPaths, ",", 2)
+			fs, err = fonts.LoadTTFontSetFromPaths(
+				ts[REGULAR],
+				ts[BOLD],
+				*fontSize,
+			)
+		} else if *fontFamily != "" {
+			fs, err = fonts.LoadTTFontSetFromFamily(*fontFamily, *fontSize)
+		} else {
+			fs, err = fonts.LoadTTFontSetDefault(*fontSize)
+		}
 		failIf(err, "load font")
 		config.fontFaceRegular = fs.Regular
 		config.fontFaceBold = fs.Bold
