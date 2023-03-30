@@ -9,8 +9,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
 //go:embed static/Inconsolata-Regular.ttf
@@ -34,20 +34,24 @@ func getFontPathWithFCMatch(pattern string) (string, error) {
 	return string(fontPath), nil
 }
 
-func loadTTFontFromBytes(bytes []byte, size float64) (font.Face, error) {
-	font, err := truetype.Parse(bytes)
+func loadOpentypeFontFromBytes(bytes []byte, size float64) (font.Face, error) {
+	f, err := opentype.Parse(bytes)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse contents of bytearray: %w", err)
 	}
 
-	face := truetype.NewFace(font, &truetype.Options{
-		Size:              size,
-		GlyphCacheEntries: 1,
+	face, err := opentype.NewFace(f, &opentype.FaceOptions{
+		Size:    size,
+		DPI:     72,
+		Hinting: font.HintingFull,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("could not create font face: %w", err)
+	}
 	return face, nil
 }
 
-func LoadTTFontFromPath(path string, size float64) (font.Face, error) {
+func LoadOpentypeFontFromPath(path string, size float64) (font.Face, error) {
 	var (
 		file *os.File
 		face font.Face
@@ -73,9 +77,10 @@ func LoadTTFontFromPath(path string, size float64) (font.Face, error) {
 			),
 		)
 	}
-	if !strings.HasSuffix(contentType, "ttf") {
+	if !strings.HasSuffix(contentType, "ttf") &&
+		!strings.HasSuffix(contentType, "otf") {
 		return nil, errors.New(
-			fmt.Sprintf("file %s is not of type ttf", path),
+			fmt.Sprintf("file %s is not of type ttf or otf", path),
 		)
 	}
 
@@ -88,7 +93,7 @@ func LoadTTFontFromPath(path string, size float64) (font.Face, error) {
 			err,
 		)
 	}
-	face, err = loadTTFontFromBytes(bytes, size)
+	face, err = loadOpentypeFontFromBytes(bytes, size)
 	if err != nil {
 		return face, fmt.Errorf(
 			"could not parse contents of file %s: %w",
@@ -99,21 +104,24 @@ func LoadTTFontFromPath(path string, size float64) (font.Face, error) {
 	return face, nil
 }
 
-func LoadTTFontFromPattern(pattern string, size float64) (font.Face, error) {
+func LoadOpentypeFontFromPattern(
+	pattern string,
+	size float64,
+) (font.Face, error) {
 	fontPath, err := getFontPathWithFCMatch(pattern)
 	if err != nil {
 		return nil, err
 	}
-	return LoadTTFontFromPath(fontPath, size)
+	return LoadOpentypeFontFromPath(fontPath, size)
 }
 
-func LoadTTFontFromFamily(
+func LoadOpentypeFontFromFamily(
 	family string,
 	style string,
 	size float64,
 ) (font.Face, error) {
 	pattern := fmt.Sprintf("%s:style=%s", family, style)
-	return LoadTTFontFromPattern(pattern, size)
+	return LoadOpentypeFontFromPattern(pattern, size)
 }
 
 type FontSet struct {
@@ -129,39 +137,42 @@ func newFontSet(regular font.Face, bold font.Face) *FontSet {
 	return &fs
 }
 
-func LoadTTFontSetFromFamily(family string, size float64) (*FontSet, error) {
-	regular, err := LoadTTFontFromFamily(family, "Regular", size)
+func LoadOpentypeFontSetFromFamily(
+	family string,
+	size float64,
+) (*FontSet, error) {
+	regular, err := LoadOpentypeFontFromFamily(family, "Regular", size)
 	if err != nil {
 		return nil, err
 	}
-	bold, err := LoadTTFontFromFamily(family, "Bold", size)
+	bold, err := LoadOpentypeFontFromFamily(family, "Bold", size)
 	if err != nil {
 		return nil, err
 	}
 	return newFontSet(regular, bold), nil
 }
 
-func LoadTTFontSetFromPaths(
+func LoadOpentypeFontSetFromPaths(
 	regularFontPath, boldFontPath string,
 	size float64,
 ) (*FontSet, error) {
-	regular, err := LoadTTFontFromPath(regularFontPath, size)
+	regular, err := LoadOpentypeFontFromPath(regularFontPath, size)
 	if err != nil {
 		return nil, err
 	}
-	bold, err := LoadTTFontFromPath(boldFontPath, size)
+	bold, err := LoadOpentypeFontFromPath(boldFontPath, size)
 	if err != nil {
 		return nil, err
 	}
 	return newFontSet(regular, bold), nil
 }
 
-func LoadTTFontSetDefault(size float64) (*FontSet, error) {
-	regular, err := loadTTFontFromBytes(inconsolataRegular, size)
+func LoadOpentypeFontSetDefault(size float64) (*FontSet, error) {
+	regular, err := loadOpentypeFontFromBytes(inconsolataRegular, size)
 	if err != nil {
 		return nil, err
 	}
-	bold, err := loadTTFontFromBytes(inconsolataBold, size)
+	bold, err := loadOpentypeFontFromBytes(inconsolataBold, size)
 	if err != nil {
 		return nil, err
 	}

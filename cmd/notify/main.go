@@ -129,15 +129,15 @@ Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/
 				BOLD    = iota
 			)
 			ts := strings.SplitN(*fontPaths, ",", 2)
-			fs, err = fonts.LoadTTFontSetFromPaths(
+			fs, err = fonts.LoadOpentypeFontSetFromPaths(
 				ts[REGULAR],
 				ts[BOLD],
 				*fontSize,
 			)
 		} else if *fontFamily != "" {
-			fs, err = fonts.LoadTTFontSetFromFamily(*fontFamily, *fontSize)
+			fs, err = fonts.LoadOpentypeFontSetFromFamily(*fontFamily, *fontSize)
 		} else {
-			fs, err = fonts.LoadTTFontSetDefault(*fontSize)
+			fs, err = fonts.LoadOpentypeFontSetDefault(*fontSize)
 		}
 		failIf(err, "load font")
 		config.fontFaceRegular = fs.Regular
