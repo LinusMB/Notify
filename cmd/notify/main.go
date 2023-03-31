@@ -341,8 +341,6 @@ Loop:
 	os.Exit(exitCode)
 }
 
-// TODO: infinite notification window duration
-// TODO: mouse click closes window with specific exit code (for example left mouse click = 0 exit code, right mouse click = 1 exit code)
 // TODO: accept neg win position
 // TODO: configure ci
 
