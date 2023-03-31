@@ -313,11 +313,10 @@ func run() {
 	// fmt.Fprint(os.Stdout, config.outputString)
 }
 
-// TODO: register mouse clicks
-// TODO: screen number (Multihead support)
-// TODO: accept neg win position
 // TODO: infinite notification window duration
-// TODO: add flag to chose border color / border width
+// TODO: mouse click closes window with specific exit code (for example left mouse click = 0 exit code, right mouse click = 1 exit code)
+// TODO: accept neg win position
+// TODO: configure ci
 
 func main() {
 	pixelgl.Run(run)
