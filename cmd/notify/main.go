@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"io"
 	"log"
+	"math"
 	"os"
 	"strings"
 	"time"
@@ -17,7 +18,6 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"golang.org/x/exp/constraints"
-	"golang.org/x/image/colornames"
 	"golang.org/x/image/font"
 )
 
@@ -29,7 +29,8 @@ type Configuration struct {
 	winHeight       float64
 	winX            float64
 	winY            float64
-	autoDimension   bool
+	borderWidth     float64
+	borderColor     color.Color
 	bgColor         color.Color
 	fgColor         color.Color
 	outputString    string
@@ -96,6 +97,14 @@ Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/
 		"d",
 		3*time.Second,
 		"duration after which notifcation closes")
+	borderWidth := flag.Float64(
+		"bw",
+		2,
+		"border width")
+	borderColor := flag.String(
+		"bc",
+		"#fff",
+		"border color in hex format #rrggbb or #rgb")
 	backgroundColor := flag.String(
 		"B",
 		"#000",
@@ -111,12 +120,8 @@ Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/
 		dim, err := parsing.ParseDimension(*dimension)
 		failIf(err, "parse dimension")
 
-		if dim.Width == 0 || dim.Height == 0 {
-			config.autoDimension = true
-		} else {
-			config.winWidth = dim.Width
-			config.winHeight = dim.Height
-		}
+		config.winWidth = dim.Width
+		config.winHeight = dim.Height
 		config.winX = dim.X
 		config.winY = dim.Y
 	}
@@ -147,6 +152,11 @@ Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/
 		config.fontFaceBold = fs.Bold
 	}
 	{
+		c, err := parsing.ParseColor(*borderColor)
+		failIf(err, "parse border color")
+		config.borderColor = c
+	}
+	{
 		c, err := parsing.ParseColor(*backgroundColor)
 		failIf(err, "parse background color")
 		config.bgColor = c
@@ -157,6 +167,7 @@ Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/
 		config.fgColor = c
 	}
 
+	config.borderWidth = *borderWidth
 	config.fontSize = *fontSize
 	config.duration = *duration
 	config.outputString = *outputString
@@ -233,11 +244,9 @@ func (tc *textContent) draw(t pixel.Target) {
 }
 
 func run() {
-	const (
-		minWinHeight = 40
-		padding      = 10
-		borderWidth  = 4
-	)
+	const minWinHeight = 40
+
+	var padding = math.Round(config.fontSize / 2)
 
 	textContent := newTextContent(
 		config.fgColor,
@@ -268,7 +277,7 @@ func run() {
 			pixel.V(textBox.W(), max(textBox.H(), minWinHeight)),
 		)
 
-		if config.autoDimension {
+		if config.winWidth == 0 || config.winHeight == 0 {
 			paddingBox = textBox.Resized(
 				textBox.Center(),
 				pixel.V(textBox.W()+2*padding, textBox.H()+2*padding),
@@ -276,18 +285,19 @@ func run() {
 		} else {
 			paddingBox = textBox.Resized(
 				textBox.Center(),
-				pixel.V(config.winWidth-2*borderWidth, config.winHeight-2*borderWidth),
+				pixel.V(config.winWidth-2*config.borderWidth, config.winHeight-2*config.borderWidth),
 			)
 		}
 		borderBox = paddingBox.Resized(
 			paddingBox.Center(),
-			pixel.V(paddingBox.W()+2*borderWidth, paddingBox.H()+2*borderWidth),
+			pixel.V(
+				paddingBox.W()+2*config.borderWidth,
+				paddingBox.H()+2*config.borderWidth,
+			),
 		)
 	}
 
-	borderColor := colornames.White
-
-	drawRectangle(borderBox, borderColor, imd)
+	drawRectangle(borderBox, config.borderColor, imd)
 
 	drawRectangle(paddingBox, config.bgColor, imd)
 
