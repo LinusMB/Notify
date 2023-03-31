@@ -95,8 +95,9 @@ Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/
 		"string that is printed to stdout after notification closes")
 	duration := flag.Duration(
 		"d",
-		3*time.Second,
-		"duration after which notifcation closes")
+		6*time.Second,
+		`duration after which the notifcation window closes. 
+If -d 0 is given, the notfication window will not close.`)
 	borderWidth := flag.Float64(
 		"bw",
 		2,
@@ -246,7 +247,7 @@ func (tc *textContent) draw(t pixel.Target) {
 func run() {
 	const minWinHeight = 40
 
-	var padding = math.Round(config.fontSize / 2)
+	padding := math.Round(config.fontSize / 2)
 
 	textContent := newTextContent(
 		config.fgColor,
@@ -304,13 +305,40 @@ func run() {
 	win, err := setupWindow(borderBox, pixel.V(config.winX, config.winY))
 	failIf(err, "create window")
 
-	for !win.Closed() {
-		imd.Draw(win)
-		textContent.draw(win)
-		win.Update()
+	imd.Draw(win)
+	textContent.draw(win)
+
+	var (
+		exitCode int
+		closeWin <-chan time.Time
+	)
+
+	if config.duration == 0 {
+		closeWin = time.After(time.Duration(math.MaxInt64))
+	} else {
+		closeWin = time.After(config.duration)
 	}
-	// time.Sleep(config.duration)
-	// fmt.Fprint(os.Stdout, config.outputString)
+
+Loop:
+	for !win.Closed() {
+		if win.JustPressed(pixelgl.MouseButtonLeft) {
+			exitCode = 0
+			break Loop
+		}
+		if win.JustPressed(pixelgl.MouseButtonRight) {
+			exitCode = 1
+			break Loop
+		}
+		select {
+		case <-closeWin:
+			break Loop
+		default:
+			win.Update()
+		}
+	}
+
+	fmt.Fprint(os.Stdout, config.outputString)
+	os.Exit(exitCode)
 }
 
 // TODO: infinite notification window duration
