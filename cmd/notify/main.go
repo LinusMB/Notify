@@ -61,13 +61,15 @@ func init() {
 
 	dimension := flag.String(
 		"g",
-		"0x0+20+20",
+		"x+20+20",
 		`window dimensions as "<width>x<height>+<x>+<y>".
-If width = 0 or height = 0, window dimensions are set to fit the text`)
+If <width> or <height> are unspecified, the window size is set to fit the text.
+If <x> or <y> are unspecified their value is set to 0 respectively.`)
 	fontFamily := flag.String(
 		"f",
 		"",
 		`font family. The font path to regular and bold font of type font family is searched using fc-match (make sure that fontconfig is installed).
+Note that only otf and ttf fonts are supported.
 If -f and -fp are unspecified the default font (Inconsolata) is used.
 If both -f and -fp are specified, -fp is preferred.
 Example: -f "Inconsolata"`,
@@ -77,6 +79,7 @@ Example: -f "Inconsolata"`,
 		"",
 		`font path to regular and bold font as "<regular-font-path>,<bold-font-path>.
 The font is loaded from the font file at <*-font-path>.
+Note that only otf and ttf fonts are supported.
 If -f and -fp are unspecified the default font (Inconsolata) is used.
 If both -f and -fp are specified, -fp is preferred.
 Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/Inconsolata-Bold.ttf"`,
