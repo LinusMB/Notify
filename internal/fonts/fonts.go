@@ -2,7 +2,6 @@ package fonts
 
 import (
 	_ "embed"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -69,19 +68,15 @@ func LoadOpentypeFontFromPath(path string, size float64) (font.Face, error) {
 
 	contentType, err := GetFileContentType(file)
 	if err != nil {
-		return nil, errors.New(
-			fmt.Sprintf(
-				"could not read content type of file %s: %w",
-				path,
-				err,
-			),
+		return nil, fmt.Errorf(
+			"could not read content type of file %s: %w",
+			path,
+			err,
 		)
 	}
 	if !strings.HasSuffix(contentType, "ttf") &&
 		!strings.HasSuffix(contentType, "otf") {
-		return nil, errors.New(
-			fmt.Sprintf("file %s is not of type ttf or otf", path),
-		)
+		return nil, fmt.Errorf("file %s is not of type ttf or otf", path)
 	}
 
 	var bytes []byte
