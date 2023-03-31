@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 func failIf(err error, msg string) {
@@ -16,25 +17,25 @@ func failIf(err error, msg string) {
 	}
 }
 
-func ParseColor(hex string) (color.RGBA, error) {
+func ParseColor(input string) (color.RGBA, error) {
 	var (
 		clr color.RGBA
 		err error
 	)
 
-	switch len(hex) {
+	switch len(input) {
 	case 4:
-		_, err = fmt.Sscanf(hex, "#%1x%1x%1x", &clr.R, &clr.G, &clr.B)
+		_, err = fmt.Sscanf(input, "#%1x%1x%1x", &clr.R, &clr.G, &clr.B)
 		clr.R |= clr.R << 4
 		clr.G |= clr.G << 4
 		clr.B |= clr.B << 4
 		clr.A = 0xff
 	case 7:
-		_, err = fmt.Sscanf(hex, "#%02x%02x%02x", &clr.R, &clr.G, &clr.B)
+		_, err = fmt.Sscanf(input, "#%02x%02x%02x", &clr.R, &clr.G, &clr.B)
 		clr.A = 0xff
 	case 9:
 		_, err = fmt.Sscanf(
-			hex,
+			input,
 			"#%02x%02x%02x%02x",
 			&clr.R,
 			&clr.G,
@@ -42,10 +43,10 @@ func ParseColor(hex string) (color.RGBA, error) {
 			&clr.A,
 		)
 	default:
-		err = errors.New("unexpected format")
+		err = errors.New("unexpected input length")
 	}
 	if err != nil {
-		return clr, fmt.Errorf("could not parse color %s: %w", hex, err)
+		return clr, fmt.Errorf("could not parse color %s: %w", input, err)
 	}
 	return clr, nil
 }
@@ -57,52 +58,48 @@ type Dimension struct {
 	Y      float64
 }
 
-func ParseDimension(dimension string) (*Dimension, error) {
+func ParseDimension(input string) (*Dimension, error) {
 	var (
 		dim Dimension
 		err error
 	)
-	re, err := regexp.Compile("[+x]")
+
+	re, err := regexp.Compile(`(\d*)x(\d*)\+(-?\d*)\+(-?\d*)`)
 	failIf(err, "compile regex")
-	ts := re.Split(dimension, -1)
+	if !re.Match([]byte(input)) {
+		return nil, fmt.Errorf("unexpected format: %s", input)
+	}
+	ms := re.FindSubmatch([]byte(input))[1:]
+	var ts [4]string
+
+	for i := range ms {
+		t := string(ms[i])
+		if t == "" {
+			ts[i] = "0"
+			continue
+		}
+		ts[i] = t
+	}
+
 	const (
 		WIDTH = iota
 		HEIGHT
 		X
 		Y
 	)
+
 	dim.Width, err = strconv.ParseFloat(ts[WIDTH], 64)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"could not parse width as float in %s: %w",
-			dimension,
-			err,
-		)
-	}
+	failIf(err, "parse dimension width")
+
 	dim.Height, err = strconv.ParseFloat(ts[HEIGHT], 64)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"could not parse height as float in %s: %w",
-			dimension,
-			err,
-		)
-	}
+	failIf(err, "parse dimension height")
+
 	dim.X, err = strconv.ParseFloat(ts[X], 64)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"could not parse x as float in %s: %w",
-			dimension,
-			err,
-		)
-	}
+	failIf(err, "parse dimension x")
+
 	dim.Y, err = strconv.ParseFloat(ts[Y], 64)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"could not parse y as float in %s: %w",
-			dimension,
-			err,
-		)
-	}
+	failIf(err, "parse dimension y")
+
 	return &dim, err
 }
 
@@ -112,20 +109,34 @@ type Notification struct {
 }
 
 func ParseNotification(input string) *Notification {
-	re, err := regexp.Compile(`(?:\[(.*)\])?(.*)`)
-	failIf(err, "compile regex")
-	const (
-		TITLE = iota + 1
-		BODY
-	)
-	ms := re.FindSubmatch([]byte(input))
+	var notif Notification
 
-	title := strings.TrimSpace(string(ms[TITLE]))
-	body := strings.TrimSpace(string(ms[BODY]))
-	n := Notification{
-		Title: title,
-		Body:  body,
+	// assume opening has already been consumed, parse until closing unless opening has been encountered before
+	parseBalanced := func(input string, opening, closing rune) (string, string) {
+		i := 0
+		balance := 0
+		for i < len(input) {
+			c, w := utf8.DecodeRuneInString(input[i:])
+			switch c {
+			case closing:
+				if balance == 0 {
+					return strings.TrimSpace(input[:i]), input[i+w:]
+				}
+				balance--
+			case opening:
+				balance++
+			}
+			i += w
+		}
+		return strings.TrimSpace(input), ""
 	}
 
-	return &n
+	input = strings.TrimSpace(input)
+
+	if strings.HasPrefix(input, "[") {
+		input, _ = strings.CutPrefix(input, "[")
+		notif.Title, input = parseBalanced(input, '[', ']')
+	}
+	notif.Body = strings.TrimSpace(input)
+	return &notif
 }
