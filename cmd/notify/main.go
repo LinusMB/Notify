@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Notify/internal/fonts"
+	ifont "Notify/internal/font"
 	"Notify/internal/parsing"
 	"flag"
 	"fmt"
@@ -129,7 +129,7 @@ If -d 0 is given, the notfication window will not close.`)
 
 	{
 		var (
-			fs  *fonts.FontSet
+			fs  *ifont.FontSet
 			err error
 		)
 		if *fontPaths != "" {
@@ -138,15 +138,15 @@ If -d 0 is given, the notfication window will not close.`)
 				BOLD    = iota
 			)
 			ts := strings.SplitN(*fontPaths, ",", 2)
-			fs, err = fonts.LoadOpentypeFontSetFromPaths(
+			fs, err = ifont.LoadOpentypeFontSetFromPaths(
 				ts[REGULAR],
 				ts[BOLD],
 				*fontSize,
 			)
 		} else if *fontFamily != "" {
-			fs, err = fonts.LoadOpentypeFontSetFromFamily(*fontFamily, *fontSize)
+			fs, err = ifont.LoadOpentypeFontSetFromFamily(*fontFamily, *fontSize)
 		} else {
-			fs, err = fonts.LoadOpentypeFontSetDefault(*fontSize)
+			fs, err = ifont.LoadOpentypeFontSetDefault(*fontSize)
 		}
 		failIf(err, "load font")
 		config.fontFaceRegular = fs.Regular

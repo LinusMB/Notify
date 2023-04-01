@@ -1,4 +1,4 @@
-package fonts
+package font
 
 import (
 	_ "embed"
