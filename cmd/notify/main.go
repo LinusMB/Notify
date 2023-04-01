@@ -132,9 +132,12 @@ If -d 0 is given, the notfication window will not close.`)
 		if *fontPaths != "" {
 			const (
 				REGULAR = iota
-				BOLD    = iota
+				BOLD
 			)
 			ts := strings.SplitN(*fontPaths, ",", 2)
+			for i := range ts {
+				ts[i] = strings.TrimSpace(ts[i])
+			}
 			fs, err = ifont.LoadOpentypeFontSetFromPaths(
 				ts[REGULAR],
 				ts[BOLD],
