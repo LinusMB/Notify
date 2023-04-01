@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/faiface/pixel/pixelgl"
-	"golang.org/x/exp/constraints"
 	"golang.org/x/image/font"
 )
 
@@ -170,13 +169,6 @@ If -d 0 is given, the notfication window will not close.`)
 	config.fontSize = *fontSize
 	config.duration = *duration
 	config.outputString = *outputString
-}
-
-func max[T constraints.Ordered](x, y T) T {
-	if x > y {
-		return x
-	}
-	return y
 }
 
 func run() {
