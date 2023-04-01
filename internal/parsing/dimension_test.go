@@ -2,7 +2,7 @@ package parsing
 
 import "testing"
 
-func TestParseDimension(t *testing.T) {
+func TestParseDimension_ValidInput(t *testing.T) {
 	tests := []struct {
 		input string
 		want  Dimension
@@ -22,6 +22,26 @@ func TestParseDimension(t *testing.T) {
 			}
 			if *got != tt.want {
 				t.Errorf("got %v, want %v", *got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseDimension_InvalidInput(t *testing.T) {
+	testInputs := []string{
+		"",
+		"x",
+		"++",
+		"+x+",
+		"20+20+20+20",
+		"20x20x20x20",
+	}
+	for _, ti := range testInputs {
+		testname := ti
+		t.Run(testname, func(t *testing.T) {
+			_, err := ParseDimension(ti)
+			if err == nil {
+				t.Error("want error for invalid input")
 			}
 		})
 	}
