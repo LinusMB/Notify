@@ -3,6 +3,7 @@ package main
 import (
 	ifont "Notify/internal/font"
 	"Notify/internal/parsing"
+	ipixel "Notify/internal/pixel"
 	"flag"
 	"fmt"
 	"image/color"
@@ -13,10 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/faiface/pixel/text"
 	"golang.org/x/exp/constraints"
 	"golang.org/x/image/font"
 )
@@ -174,25 +172,6 @@ If -d 0 is given, the notfication window will not close.`)
 	config.outputString = *outputString
 }
 
-func setupWindow(
-	bounds pixel.Rect,
-	position pixel.Vec,
-) (*pixelgl.Window, error) {
-	cfg := pixelgl.WindowConfig{
-		Title:       appName,
-		Bounds:      bounds,
-		Position:    position,
-		VSync:       true,
-		Undecorated: true,
-	}
-	win, err := pixelgl.NewWindow(cfg)
-	if err != nil {
-		return nil, err
-	}
-	win.SetSmooth(true)
-	return win, nil
-}
-
 func max[T constraints.Ordered](x, y T) T {
 	if x > y {
 		return x
@@ -200,61 +179,7 @@ func max[T constraints.Ordered](x, y T) T {
 	return y
 }
 
-func drawRectangle(
-	r pixel.Rect,
-	c color.Color,
-	imd *imdraw.IMDraw,
-) {
-	imd.Color = c
-	vs := r.Vertices()
-	imd.Push(vs[0], vs[1], vs[2], vs[3])
-	imd.Polygon(0)
-}
-
-type textContent struct {
-	title *text.Text
-	body  *text.Text
-}
-
-func newTextContent(c color.Color, regular, bold *text.Atlas) *textContent {
-	tc := textContent{
-		title: text.New(pixel.ZV, bold),
-		body:  text.New(pixel.ZV, regular),
-	}
-	tc.title.Color = c
-	tc.body.Color = c
-	return &tc
-}
-
-func (tc *textContent) writeTitle(title string) {
-	fmt.Fprintln(tc.title, title)
-}
-
-func (tc *textContent) writeBody(body string) {
-	tc.body.Dot = tc.title.Dot
-	fmt.Fprint(tc.body, body)
-}
-
-func (tc *textContent) bounds() pixel.Rect {
-	return tc.title.Bounds().Union(tc.body.Bounds())
-}
-
-func (tc *textContent) draw(t pixel.Target) {
-	tc.title.Draw(t, pixel.IM)
-	tc.body.Draw(t, pixel.IM)
-}
-
 func run() {
-	const minWinHeight = 40
-
-	padding := math.Round(config.fontSize / 2)
-
-	textContent := newTextContent(
-		config.fgColor,
-		text.NewAtlas(config.fontFaceRegular, text.ASCII),
-		text.NewAtlas(config.fontFaceBold, text.ASCII),
-	)
-
 	var notification *parsing.Notification
 	{
 		bytes, err := io.ReadAll(os.Stdin)
@@ -263,50 +188,43 @@ func run() {
 		notification = parsing.ParseNotification(input)
 	}
 
-	if notification.Title != "" {
-		textContent.writeTitle(notification.Title)
-	}
-	textContent.writeBody(notification.Body)
+	notifText := ipixel.SetupNotificationText(
+		config.fontFaceRegular,
+		config.fontFaceBold,
+		config.fgColor,
+		notification.Title,
+		notification.Body,
+	)
 
-	imd := imdraw.New(nil)
-
-	var textBox, paddingBox, borderBox pixel.Rect
-	{
-		textBox = textContent.bounds()
-		textBox = textBox.Resized(
-			textBox.Center(),
-			pixel.V(textBox.W(), max(textBox.H(), minWinHeight)),
-		)
-
-		if config.winWidth == 0 || config.winHeight == 0 {
-			paddingBox = textBox.Resized(
-				textBox.Center(),
-				pixel.V(textBox.W()+2*padding, textBox.H()+2*padding),
-			)
-		} else {
-			paddingBox = textBox.Resized(
-				textBox.Center(),
-				pixel.V(config.winWidth-2*config.borderWidth, config.winHeight-2*config.borderWidth),
-			)
-		}
-		borderBox = paddingBox.Resized(
-			paddingBox.Center(),
-			pixel.V(
-				paddingBox.W()+2*config.borderWidth,
-				paddingBox.H()+2*config.borderWidth,
-			),
-		)
+	var winWidth, winHeight float64
+	if config.winWidth == 0 || config.winHeight == 0 {
+		padding := math.Round(config.fontSize / 2)
+		winWidth = notifText.W() + 2*padding + 2*config.borderWidth
+		winHeight = notifText.H() + 2*padding + 2*config.borderWidth
+	} else {
+		winWidth = config.winWidth
+		winHeight = config.winHeight
 	}
 
-	drawRectangle(borderBox, config.borderColor, imd)
+	notifWin := ipixel.SetupNotificationWindow(
+		winWidth,
+		winHeight,
+		config.borderWidth,
+		config.bgColor,
+		config.borderColor,
+	)
 
-	drawRectangle(paddingBox, config.bgColor, imd)
+	win, err := ipixel.SetupWindow(
+		appName,
+		winWidth,
+		winHeight,
+		config.winX,
+		config.winY,
+	)
+	failIf(err, "setup window")
 
-	win, err := setupWindow(borderBox, pixel.V(config.winX, config.winY))
-	failIf(err, "create window")
-
-	imd.Draw(win)
-	textContent.draw(win)
+	notifWin.Draw(win)
+	notifText.Draw(win)
 
 	var (
 		exitCode int
