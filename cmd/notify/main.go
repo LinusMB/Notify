@@ -254,7 +254,6 @@ Loop:
 	os.Exit(exitCode)
 }
 
-// TODO: accept neg win position
 // TODO: configure ci
 
 func main() {

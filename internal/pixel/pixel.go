@@ -13,10 +13,18 @@ func SetupWindow(
 	winWidth, winHeight, winX, winY float64,
 ) (*pixelgl.Window, error) {
 	winBox := createBox(winWidth, winHeight, pixel.ZV)
+	monW, monH := pixelgl.PrimaryMonitor().Size()
+	position := pixel.V(winX, winY)
+	if winX < 0 {
+		position.X = monW + winX - winWidth
+	}
+	if winY < 0 {
+		position.Y = monH + winY - winHeight
+	}
 	cfg := pixelgl.WindowConfig{
 		Title:       title,
 		Bounds:      winBox,
-		Position:    pixel.V(winX, winY),
+		Position:    position,
 		VSync:       true,
 		Undecorated: true,
 	}
