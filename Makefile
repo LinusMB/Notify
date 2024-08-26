@@ -16,4 +16,4 @@ build: $(BIN)
 
 .PHONY: install
 install: $(BIN)
-	install -D $(BIN) $(PREFIX)/bin
+	install -D $(BIN) $(PREFIX)/bin/notify
