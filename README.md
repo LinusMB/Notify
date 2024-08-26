@@ -28,3 +28,4 @@ $ curl example.com >/dev/null 2>&1 && \
   notify -B "#28A745" -d 1s <<< "[Curl]Download succeeded." || \
   notify -B "#DC3545" -d 1s <<< "[Curl]Download failed."
 ```
+![Screenshot](screenshot.png)
