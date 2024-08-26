@@ -88,7 +88,7 @@ Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/
 		"font size")
 	outputString := flag.String(
 		"e",
-		"echo 'done'",
+		"",
 		"string that is printed to stdout after notification closes")
 	duration := flag.Duration(
 		"d",
@@ -250,7 +250,9 @@ Loop:
 		}
 	}
 
-	fmt.Fprint(os.Stdout, config.outputString)
+	if config.outputString != "" {
+		fmt.Fprint(os.Stdout, config.outputString)
+	}
 	os.Exit(exitCode)
 }
 
