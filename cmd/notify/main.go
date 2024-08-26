@@ -16,6 +16,7 @@ import (
 
 	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/font"
+	"golang.org/x/sys/unix"
 )
 
 type Configuration struct {
@@ -35,8 +36,9 @@ type Configuration struct {
 }
 
 var (
-	config  Configuration
-	appName = "notify"
+	config   Configuration
+	appName  = "notify"
+	lockPath = fmt.Sprintf("/tmp/%s.lock", appName)
 )
 
 func failIf(err error, msg string) {
@@ -257,5 +259,13 @@ Loop:
 }
 
 func main() {
+	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0666)
+	failIf(err, "open lock file")
+	defer lockFile.Close()
+
+	if err := unix.Flock(int(lockFile.Fd()), unix.LOCK_EX); err != nil {
+		failIf(err, "acquire lock")
+	}
+	defer unix.Flock(int(lockFile.Fd()), unix.LOCK_UN)
 	pixelgl.Run(run)
 }
