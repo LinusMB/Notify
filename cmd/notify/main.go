@@ -93,7 +93,7 @@ Example: -fp "/usr/share/fonts/TTF/Inconsolata-Regular.ttf,/usr/share/fonts/TTF/
 	duration := flag.Duration(
 		"d",
 		6*time.Second,
-		`duration after which the notifcation window closes. 
+		`duration after which the notification window closes.
 If -d 0 is given, the notfication window will not close.`)
 	borderWidth := flag.Float64(
 		"bw",
@@ -253,8 +253,6 @@ Loop:
 	fmt.Fprint(os.Stdout, config.outputString)
 	os.Exit(exitCode)
 }
-
-// TODO: configure ci
 
 func main() {
 	pixelgl.Run(run)
