@@ -1,6 +1,6 @@
 # Notify
 
-Displays text read form stdin in a pop-up notification window.
+Displays text read from stdin in a pop-up notification window.
 
 Minimal and daemonless alternative to notification services like [Dunst](https://github.com/dunst-project/dunst).
 
