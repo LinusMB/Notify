@@ -1,11 +1,11 @@
-module Notify
+module github.com/LinusMB/Notify
 
 go 1.20
 
 require (
 	github.com/faiface/pixel v0.10.0
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/image v0.6.0
+	golang.org/x/sys v0.24.0
 )
 
 require (
@@ -15,6 +15,5 @@ require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72 // indirect
 	github.com/go-gl/mathgl v0.0.0-20190416160123-c4601bc793c7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 )

@@ -1,9 +1,6 @@
 package main
 
 import (
-	ifont "Notify/internal/font"
-	"Notify/internal/parsing"
-	ipixel "Notify/internal/pixel"
 	"flag"
 	"fmt"
 	"image/color"
@@ -13,6 +10,10 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	ifont "github.com/LinusMB/Notify/internal/font"
+	"github.com/LinusMB/Notify/internal/parsing"
+	ipixel "github.com/LinusMB/Notify/internal/pixel"
 
 	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/font"
